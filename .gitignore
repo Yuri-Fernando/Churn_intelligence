@@ -1,0 +1,17 @@
+# Ambiente virtual
+.venv/
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Sistema
+.DS_Store
+Thumbs.db

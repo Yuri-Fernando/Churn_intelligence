@@ -1,0 +1,3 @@
+segment,base_action,final_action,audit_status,num_users
+at_risk,offer_discount,offer_discount,skipped,14450
+engaged,recommend_new_product,recommend_new_product,skipped,35550
