@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  churn-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../models:/app/models:ro
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.5.0
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../notebooks/mlflow.db:/mlflow/mlflow.db
+    command: >
+      mlflow server
+        --backend-store-uri sqlite:////mlflow/mlflow.db
+        --host 0.0.0.0
+        --port 5000
+    restart: unless-stopped

@@ -1,22 +1,35 @@
-{
- "nbformat": 4,
- "nbformat_minor": 5,
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "name": "python",
-   "version": "3.10.0"
-  }
- },
- "cells": [
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+"""Script para gerar main.ipynb reorganizado com todas as fases."""
+import json
+import os
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+OUT  = os.path.join(ROOT, "notebooks", "main.ipynb")
+
+
+def md(source):
+    if isinstance(source, str):
+        source = [source]
+    return {"cell_type": "markdown", "metadata": {}, "source": source}
+
+
+def co(source):
+    if isinstance(source, str):
+        source = [source]
+    return {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": source,
+    }
+
+
+cells = []
+
+# ------------------------------------------------------------------
+# HEADER
+# ------------------------------------------------------------------
+cells.append(md([
     "# Churn Intelligence Pipeline\n",
     "\n",
     "Pipeline completo: engenharia de features, modelos de churn, segmentacao dinamica,\n",
@@ -28,22 +41,14 @@
     "| 2 | Segmentacao dinamica (KMeans + regras) + agentes + MLflow |\n",
     "| 3 | Camada cognitiva: RAG + agentes especializados + auditoria |\n",
     "| 4 | API de predicao online (simulacao) |\n",
-    "| 5 | Privacidade, anonimizacao e analise de fairness |\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "## Setup\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "| 5 | Privacidade, anonimizacao e analise de fairness |\n",
+]))
+
+# ------------------------------------------------------------------
+# SETUP
+# ------------------------------------------------------------------
+cells.append(md("## Setup\n"))
+cells.append(co([
     "import sys, os, warnings\n",
     "warnings.filterwarnings('ignore')\n",
     "\n",
@@ -55,13 +60,13 @@
     "import joblib\n",
     "import mlflow\n",
     "\n",
-    "print('Setup concluido')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print('Setup concluido')\n",
+]))
+
+# ------------------------------------------------------------------
+# FASE 1
+# ------------------------------------------------------------------
+cells.append(md([
     "---\n",
     "## Fase 1 -- Engenharia de Features + Modelos de Churn\n",
     "\n",
@@ -72,15 +77,10 @@
     "- `frequency` -- frequencia de logins\n",
     "- `avg_session_duration` -- duracao media de sessao (min)\n",
     "- `intensity` -- paginas por sessao\n",
-    "- `engagement_trend` -- placeholder de tendencia de engajamento\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "- `engagement_trend` -- placeholder de tendencia de engajamento\n",
+]))
+
+cells.append(co([
     "from src.features.build_features import build_features\n",
     "\n",
     "df = build_features(\n",
@@ -90,42 +90,27 @@
     "\n",
     "print(f'Dataset: {df.shape[0]:,} usuarios | {df.shape[1]} colunas')\n",
     "print(f'Churn rate global: {df[\"churn\"].mean():.1%}')\n",
-    "df.head(3)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "df.head(3)\n",
+]))
+
+cells.append(co([
     "from src.models.churn_model import train_models\n",
     "from src.evaluation.metrics import print_metrics\n",
     "\n",
     "models_dict, results_dict = train_models(df)\n",
     "\n",
     "print('\\n=== Metricas por modelo ===')\n",
-    "print_metrics(results_dict)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print_metrics(results_dict)\n",
+]))
+
+cells.append(co([
     "# Salvar Random Forest para uso nas fases seguintes\n",
     "os.makedirs('../models', exist_ok=True)\n",
     "joblib.dump(models_dict['RandomForest'], '../models/rf_model.pkl')\n",
-    "print('Modelo salvo em ../models/rf_model.pkl')\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print('Modelo salvo em ../models/rf_model.pkl')\n",
+]))
+
+cells.append(co([
     "# SHAP -- importancia de features (requer pacote shap)\n",
     "try:\n",
     "    from src.evaluation.shap_analysis import explain_model\n",
@@ -133,13 +118,13 @@
     "    X_train, X_test, y_train, y_test = split_features_target(df)\n",
     "    explain_model(models_dict['RandomForest'], X_train)\n",
     "except Exception as e:\n",
-    "    print(f'SHAP nao disponivel: {e}')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "    print(f'SHAP nao disponivel: {e}')\n",
+]))
+
+# ------------------------------------------------------------------
+# FASE 2
+# ------------------------------------------------------------------
+cells.append(md([
     "---\n",
     "## Fase 2 -- Segmentacao Dinamica + Agentes + MLflow\n",
     "\n",
@@ -148,15 +133,10 @@
     "- **KMeans**: segmentacao nao-supervisionada por comportamento (4 clusters)\n",
     "- **Regras**: limiar de recencia + frequencia como baseline\n",
     "- **RetentionAgent**: associa acao a cada usuario pelo score\n",
-    "- **MLflow**: rastreia metricas e parametros do experimento\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "- **MLflow**: rastreia metricas e parametros do experimento\n",
+]))
+
+cells.append(co([
     "from src.models.clustering_model import cluster_users, cluster_summary\n",
     "\n",
     "df_clustered = cluster_users(df, n_clusters=4)\n",
@@ -165,15 +145,10 @@
     "print(df_clustered['cluster_label'].value_counts().to_string())\n",
     "print()\n",
     "print('=== Media de features por cluster ===')\n",
-    "display(cluster_summary(df_clustered))\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "display(cluster_summary(df_clustered))\n",
+]))
+
+cells.append(co([
     "from src.segmentation.user_segmentation import segment_users\n",
     "from src.personalization.actions import generate_action\n",
     "\n",
@@ -187,15 +162,10 @@
     "    .sort_values('usuarios', ascending=False)\n",
     ")\n",
     "print('=== Segmentacao por regras ===')\n",
-    "display(summary)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "display(summary)\n",
+]))
+
+cells.append(co([
     "from src.agents.retention_agent import RetentionAgent\n",
     "from src.models.model_utils import split_features_target\n",
     "\n",
@@ -210,15 +180,10 @@
     "df_test['user_id'] = [f'u_{i:05d}' for i in range(len(df_test))]\n",
     "\n",
     "print(f'Score medio: {churn_scores.mean():.3f}')\n",
-    "print(f'Alto risco (score > 0.7): {(churn_scores > 0.7).sum():,} usuarios ({(churn_scores > 0.7).mean():.1%})')\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print(f'Alto risco (score > 0.7): {(churn_scores > 0.7).sum():,} usuarios ({(churn_scores > 0.7).mean():.1%})')\n",
+]))
+
+cells.append(co([
     "# MLflow -- registrar metricas do experimento\n",
     "mlflow.set_tracking_uri('sqlite:///../notebooks/mlflow.db')\n",
     "mlflow.set_experiment('churn_pipeline_fase2')\n",
@@ -239,13 +204,13 @@
     "    mlflow.log_param('n_estimators', 100)\n",
     "\n",
     "print('Experimento registrado no MLflow.')\n",
-    "print('Visualizar: mlflow ui --backend-store-uri sqlite:///../notebooks/mlflow.db')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print('Visualizar: mlflow ui --backend-store-uri sqlite:///../notebooks/mlflow.db')\n",
+]))
+
+# ------------------------------------------------------------------
+# FASE 3
+# ------------------------------------------------------------------
+cells.append(md([
     "---\n",
     "## Fase 3 -- Camada Cognitiva: RAG + Agentes + Auditoria\n",
     "\n",
@@ -262,15 +227,10 @@
     "- **AnalystAgent**: interpreta score e features, define nivel de risco\n",
     "- **StrategyAgent**: cruza analise com regras de negocio, decide acao\n",
     "- **RAG**: gera explicacao narrativa contextualizada\n",
-    "- **AuditorAgent**: valida consistencia da decisao e emite flags\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "- **AuditorAgent**: valida consistencia da decisao e emite flags\n",
+]))
+
+cells.append(co([
     "from src.agents.analyst_agent import AnalystAgent\n",
     "from src.agents.strategy_agent import StrategyAgent\n",
     "from src.agents.auditor_agent import AuditorAgent\n",
@@ -284,15 +244,10 @@
     "rag      = ChurnRAG(SimpleRetriever(), LLMGenerator())\n",
     "\n",
     "COGNITIVE_MIN, COGNITIVE_MAX = 0.4, 0.7\n",
-    "print('Agentes cognitivos carregados')\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print('Agentes cognitivos carregados')\n",
+]))
+
+cells.append(co([
     "def run_cognitive_pipeline(user_id, churn_score, features):\n",
     "    \"\"\"Executa pipeline completo: Analyst -> Strategy -> RAG -> Auditor.\"\"\"\n",
     "    analysis    = analyst.run(churn_score=churn_score, features=features, rag_context='')\n",
@@ -331,27 +286,22 @@
     "    r = run_cognitive_pipeline(str(row['user_id']), float(row['churn_score']), feats)\n",
     "    results_cog.append(r)\n",
     "    print(f\"{r['user_id']:10s} | score={r['churn_score']:.2f} | \"\n",
-    "          f\"risco={r['risk_level']:5s} | acao={r['action']:22s} | audit={r['audit_status']}\")\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "          f\"risco={r['risk_level']:5s} | acao={r['action']:22s} | audit={r['audit_status']}\")\n",
+]))
+
+cells.append(co([
     "decisions_df = pd.DataFrame(results_cog)[[\n",
     "    'user_id', 'churn_score', 'risk_level', 'action', 'reasoning', 'audit_status'\n",
     "]]\n",
     "decisions_df.to_csv('agent_decision_summary.csv', index=False)\n",
     "print('Resumo salvo em agent_decision_summary.csv')\n",
-    "display(decisions_df)\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "display(decisions_df)\n",
+]))
+
+# ------------------------------------------------------------------
+# FASE 4
+# ------------------------------------------------------------------
+cells.append(md([
     "---\n",
     "## Fase 4 -- API de Predicao Online (Simulacao)\n",
     "\n",
@@ -370,15 +320,10 @@
     "- `GET  /health` -- status do servico\n",
     "- `POST /predict` -- predicao individual\n",
     "- `POST /batch` -- predicao em lote\n",
-    "- `POST /score` -- predicao por evento raw (model_server)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "- `POST /score` -- predicao por evento raw (model_server)\n",
+]))
+
+cells.append(co([
     "from src.api.recommendations import recommend_action, score_to_risk_level, score_to_segment\n",
     "from src.online_prediction.feature_builder import build_online_features\n",
     "\n",
@@ -400,15 +345,10 @@
     "    segment = score_to_segment(score)\n",
     "    action  = recommend_action(segment, score)\n",
     "    risk    = score_to_risk_level(score)\n",
-    "    print(f\"{ev['user_id']:<12} {score:>6.3f} {risk:<7} {segment:<14} {action}\")\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "    print(f\"{ev['user_id']:<12} {score:>6.3f} {risk:<7} {segment:<14} {action}\")\n",
+]))
+
+cells.append(co([
     "import json\n",
     "\n",
     "payload = {\n",
@@ -430,13 +370,13 @@
     "    'action': 'engagement_campaign',\n",
     "    'risk_level': 'medio',\n",
     "    'explanation': 'Score de churn: 0.52. Risco medio. Recencia: 30d, Frequencia: 5 logins. Acao: engagement_campaign.',\n",
-    "}, indent=2))\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "}, indent=2))\n",
+]))
+
+# ------------------------------------------------------------------
+# FASE 5
+# ------------------------------------------------------------------
+cells.append(md([
     "---\n",
     "## Fase 5 -- Privacidade e Analise de Fairness\n",
     "\n",
@@ -445,15 +385,10 @@
     "1. **Pseudonimizacao**: `Customer_ID` substituido por hash SHA-256 truncado\n",
     "2. **Minimizacao**: remocao de colunas com PII direto (email, telefone, nome)\n",
     "3. **Generalizacao**: idade exata substituida por faixa etaria\n",
-    "4. **Fairness**: analise de disparidade de churn rate por atributo sensivel\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "4. **Fairness**: analise de disparidade de churn rate por atributo sensivel\n",
+]))
+
+cells.append(co([
     "from src.privacy.anonymization import anonymize_dataframe, minimization_report\n",
     "\n",
     "df_raw = pd.read_csv('../data/raw/ecommerce_customer_churn_dataset.csv')\n",
@@ -466,15 +401,10 @@
     "print(f'Adicionadas:{rep[\"added\"] or \"nenhuma\"}')\n",
     "print()\n",
     "print('Exemplo de Customer_ID anonimizado:')\n",
-    "print(df_anon[['Customer_ID']].head(3).to_string(index=False))\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print(df_anon[['Customer_ID']].head(3).to_string(index=False))\n",
+]))
+
+cells.append(co([
     "from src.privacy.bias_check import check_bias, print_bias_report\n",
     "\n",
     "df_check = df.copy()\n",
@@ -484,8 +414,31 @@
     "        df_check[col] = df_raw[col].values\n",
     "\n",
     "result = check_bias(df_check, sensitive_cols=['Gender', 'Country'])\n",
-    "print_bias_report(result)\n"
-   ]
-  }
- ]
+    "print_bias_report(result)\n",
+]))
+
+# ------------------------------------------------------------------
+# GRAVAR
+# ------------------------------------------------------------------
+nb = {
+    "nbformat": 4,
+    "nbformat_minor": 5,
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3",
+        },
+        "language_info": {
+            "name": "python",
+            "version": "3.10.0",
+        },
+    },
+    "cells": cells,
 }
+
+with open(OUT, "w", encoding="utf-8") as f:
+    json.dump(nb, f, ensure_ascii=False, indent=1)
+
+print(f"main.ipynb gravado em {OUT}")
+print(f"Total de celulas: {len(cells)}")

@@ -1,2 +1,37 @@
+# Core
+pandas>=1.5.0
+numpy>=1.23.0
+scikit-learn>=1.2.0
+joblib>=1.2.0
 
+# API
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+pydantic>=2.0.0
 
+# Tracking
+mlflow>=2.5.0
+
+# Explainability
+shap>=0.42.0
+
+# Embeddings (RAG)
+sentence-transformers>=2.2.0
+
+# Notebook
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# Dashboard
+streamlit>=1.35.0
+plotly>=5.18.0
+
+# Testes
+pytest>=8.0.0
+pytest-cov>=4.0.0
+
+# Opcional: LLM real
+# openai>=1.0.0
+
+# Opcional: Langfuse observabilidade
+# langfuse>=2.0.0
