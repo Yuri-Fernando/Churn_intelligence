@@ -207,6 +207,33 @@ Templates YAML em `k8s/` para deploy em cluster:
 
 ---
 
+### Fase 8 — Processamento Distribuído (PySpark) + Pipeline Assíncrono V2
+
+**O que faz:** estende a Fase 1 (feature engineering) e os Extras de Streaming com uma
+camada de execução preparada para volumes maiores e I/O real de produção, mantendo a V1
+intacta.
+
+**`src/features/build_features_spark_v2.py`:** reimplementa `build_features.py` com a
+DataFrame API do PySpark — mesma lógica de negócio (recência, frequência, intensidade,
+target de churn), mas com leitura particionada do CSV, encoding categórico distribuído
+(dense_rank via window function no lugar de `pd.factorize`), imputação de nulos com mediana
+aproximada por partição e escrita em parquet particionado. Inclui `feature_summary()`, uma
+agregação distribuída (`groupBy` + `avg`/`count`) de exemplo.
+
+**`src/streaming/event_processor_async_v2.py`:** reimplementa `event_processor.py` com
+`asyncio` — em vez de uma única thread consumidora sobre `queue.Queue`, N corrotinas
+(`AsyncStreamProcessor(n_workers=...)`) consomem concorrentemente de uma `asyncio.Queue`,
+delegando a inferência (bloqueante) para uma thread via `asyncio.to_thread`. Mantém o mesmo
+contrato de `UserEvent`/`ProcessedEvent` e a mesma lógica score → segmento → ação da V1.
+
+**`notebooks/spark_async_v2.ipynb`:** demonstra as duas partes lado a lado, incluindo um
+benchmark simples V1 (threading, 1 worker) vs V2 (asyncio, N workers) sob a mesma carga de
+eventos sintéticos.
+
+**`requirements_v2.txt`:** estende `requirements.txt` com `pyspark`.
+
+---
+
 ### Extras implementados
 
 **Streaming (`src/streaming/event_processor.py`):**
@@ -246,6 +273,7 @@ Pipeline GitHub Actions ativado em push/PR para master: lint com flake8, execuca
 | 5 | Completo | Pseudonimizacao + minimizacao + fairness |
 | 6 | Completo | Docker — Dockerfile + docker-compose (API + MLflow) |
 | 7 | Referencia | Kubernetes — YAML templates em `k8s/` |
+| 8 | Completo (V2) | Processamento distribuido (PySpark) + streaming assincrono (asyncio) |
 
 ### Componentes extras
 
@@ -255,6 +283,8 @@ Pipeline GitHub Actions ativado em push/PR para master: lint com flake8, execuca
 | Langfuse | Graceful | Loga no Langfuse se chaves configuradas, fallback para print() |
 | RAG com embeddings | Completo | SimpleRetriever usa sentence-transformers se disponivel |
 | Streaming | Completo | src/streaming/event_processor.py — produtor/consumidor com threading |
+| Streaming assincrono (V2) | Completo | src/streaming/event_processor_async_v2.py — asyncio, N workers concorrentes |
+| Feature engineering distribuido (V2) | Completo | src/features/build_features_spark_v2.py — PySpark DataFrame API |
 | Dashboard | Completo | src/dashboard/app.py — Streamlit com KPIs, segmentacao, fairness |
 | Experiments | Completo | notebooks/experiments.ipynb — cross-val, GridSearch, curvas ROC |
 | Benchmarks | Completo | notebooks/benchmarks.ipynb — latencia, throughput, streaming |
@@ -435,4 +465,4 @@ export LANGFUSE_SECRET_KEY="sk-..."
 
 ## Tecnologias
 
-`Python 3.10` | `scikit-learn` | `pandas` | `FastAPI` | `MLflow` | `Streamlit` | `SHAP` | `sentence-transformers` | `pydantic` | `joblib` | `pytest` | `Docker`
+`Python 3.10` | `scikit-learn` | `pandas` | `FastAPI` | `MLflow` | `Streamlit` | `SHAP` | `sentence-transformers` | `pydantic` | `joblib` | `pytest` | `Docker` | `PySpark` (V2) | `asyncio` (V2)
