@@ -487,6 +487,40 @@ eventos sintéticos. `requirements_v2.txt` estende `requirements.txt` com `pyspa
 
 ---
 
+# 8c. Robustness Testing (V3)
+
+Teste de robustez do modelo de churn no estilo **empresarial** — não FGSM
+acadêmico. Modela a pergunta: *se `tenure: 14→15`, `tickets: 5→4`,
+`usage: 120→125` já muda a probabilidade de churn de 0.82 para 0.39, a
+fronteira de decisão é confiável?*
+
+`src/robustness/`:
+
+- `perturbation.py` — `feature_perturbation` (swing de probabilidade e
+  decision-flip rate por delta) + `fragility_score` (resumo único: fração
+  de decisões que mudam com ±1 unidade nas features-chave).
+- `missing_data.py` — `missing_data_impact` / `missing_data_sweep`: simula
+  features ausentes em inferência e mede o quanto a predição muda —
+  ranqueia de quais features o modelo mais depende.
+- `distribution_shift.py` — `covariate_shift` (queda de acurácia sob
+  escala/offset controlado numa feature) + `psi` (Population Stability
+  Index).
+- `ood.py` — `OODDetector`: calibra limites por feature no treino e sinaliza
+  entradas fora de distribuição (candidatas a decisão não-confiável).
+- `report.py` — `robustness_report`: consolida tudo num **MODEL ROBUSTNESS
+  REPORT** com nível de risco (LOW/MEDIUM/HIGH) e mitigações recomendadas.
+
+`notebooks/robustness_testing_v3.ipynb` roda os quatro testes sobre o modelo
+treinado em `features.csv`. 7 testes (`tests/test_robustness.py`).
+
+O relatório alimenta o *robustness gate* do **Argus**
+(`ml-platform/adversarial-evaluation/`) via o `ModelSecurityReport` do
+**ThemisAI** (`core/adversarial_ml/`) — caso de uso de **robustness testing**
+da trilha de AI Security do portfólio (ver também VisionGuard, Credit Score,
+RL-PID-AGV).
+
+---
+
 # 9. Dashboard Executivo
 
 O dashboard utiliza **Streamlit**.
@@ -953,6 +987,7 @@ A camada Kubernetes é mantida como **referência de infraestrutura**, não como
 | Streaming | Completo |
 | Streaming assíncrono (V2) | Completo — `event_processor_async_v2.py`, asyncio N workers |
 | Feature engineering distribuído (V2) | Completo — `build_features_spark_v2.py`, PySpark |
+| Robustness Testing (V3) | Completo — `src/robustness/` (perturbação, missing-data, shift, OOD, report) |
 | Dashboard | Completo |
 | Experiments | Completo |
 | Benchmarks | Completo |
@@ -973,6 +1008,7 @@ A camada Kubernetes é mantida como **referência de infraestrutura**, não como
 | 6 | ✅ Completo | Docker + Docker Compose |
 | 7 | 🔵 Referência | Templates Kubernetes |
 | 8b | ✅ Completo (V2) | Processamento distribuído (PySpark) + streaming assíncrono (asyncio) |
+| 8c | ✅ Completo (V3) | Robustness testing (perturbação de features, missing-data, distribution shift, OOD) |
 
 ---
 
